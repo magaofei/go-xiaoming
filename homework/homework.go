@@ -28,20 +28,51 @@ func main() {
 	v := reflect.ValueOf(h)
 	num := v.NumField()
 
+	fmt.Println(num)
+
 	//for i, d := range f {
 	//	println(i)
 	//	println(i2)
 	//}
-	for i := 0; i < num; i++ {
-		f := v.Field(i)
-		if f.CanSet() {
-			fmt.Println("aaa" + f.String())
-		}
-	}
+	//for i := 0; i < num; i++ {
+	//	f := v.Field(i)
+	//
+	//}
 
 
 	//msg, _ := h.SayHello("golang")
 	//print(msg)
+}
+
+func SetFuncField(val interface{}) {
+	v := reflect.ValueOf(val)
+	ele := v.Elem()
+	t := ele.Type()
+
+	numField := t.NumField()
+	for i := 0; i < numField; i++ {
+		field := t.Field(i)
+		fieldValue := ele.Field(i)
+		if fieldValue.CanSet() {
+			//fmt.Println("aaa" + f.String())
+			fn := func(args [] reflect.Value) (results []reflect.Value) {
+				name := args[0].Interface().(string)
+
+				client := http.Client{}
+
+				resp, err := client.Get("http://localhost:8080/" + name)
+				if err != nil {
+					return []reflect.Value{reflect.ValueOf(""), reflect.ValueOf(err)}
+				}
+				data, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					return []reflect.Value{reflect.ValueOf(""), reflect.ValueOf(err)}
+				}
+				return []reflect.Value{reflect.ValueOf(string(data)), reflect.Zero(reflect.TypeOf(new(error)).Elem())}
+			}
+			fieldValue.Set(reflect.MakeFunc(field.Type, fn))
+		}
+	}
 }
 func Add(values []interface{}, val interface{}, index int) ([]interface{}, error) {
 	var res []interface{}
